@@ -32,6 +32,7 @@ class DrawCanvas:
         self.drawRectangle(5, colour, x, y, 10, 10)
 
     def drawRandomPoints(self):
+        #  try
         pass
 
 if __name__ == "__main__":
