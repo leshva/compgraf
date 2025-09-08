@@ -4,47 +4,47 @@ import random
 import math
 
 # Настройки изображения
-w = 600
-h = 600
+WIDTH: int = 600
+HEIGHT: int = 600
+BG_COLOR: tuple = (255, 255, 255)  # белый фон
+canvas = np.full([HEIGHT, WIDTH, 3], BG_COLOR, dtype='uint8')
 
-bg_color = (150, 150, 150)  # серый фон
-vp = np.full([h, w, 3], bg_color, dtype='uint8')
 
 # Параметры квадратов
-square_size = 20
-spacing = 40
+SQUARE_SIZE: int = 20
+SPACING: int = 40  # кол-во квадратов
 
-num_cols = w // spacing
-num_rows = h // spacing
+NUM_COLS: int = WIDTH // SPACING
+NUM_ROWS: int = HEIGHT // SPACING
 
-offset_x = (w - (num_cols - 1) * spacing) // 2
-offset_y = (h - (num_rows - 1) * spacing) // 2
-
-# Параметры перевернутой параболы (вершина в центре)
-a = -0.007  # отрицательный коэффициент для перевернутой параболы
-vertex_x = w // 2
-vertex_y = h // 2 + 300
-cutoff_height = 10  # Высота, ниже которой всё исчезает
+OFFSET_X: int = (WIDTH - (NUM_COLS - 1) * SPACING) // 2
+OFFSET_Y: int = (HEIGHT - (NUM_ROWS - 1) * SPACING) // 2
 
 
-# Функция для определения, находится ли точка снаружи параболы и выше уровня отсечения
-def is_outside_parabola(x, y):
+# параметры перевернутой параболы (вершина в центре)
+a: float = -0.007  # отрицательный коэф для перевернутой параболы
+VERTEX_X: int = WIDTH // 2
+VERTEX_Y: int = HEIGHT // 2 + 300
+CUTOFF_HEIGHT: int = 10  # высота, ниже которой всё исчезает
+
+
+def is_outside_parabola(x, y) -> bool:
     """Проверяет, находится ли точка снаружи перевернутой параболы и выше уровня отсечения"""
-    if y < cutoff_height:  # Если ниже уровня отсечения - не рисуем
+    if y < CUTOFF_HEIGHT:  # если ниже уровня отсечения - не рисуем
         return False
 
-    parabola_y = a * (x - vertex_x) ** 2 + vertex_y
+    parabola_y = a * (x - VERTEX_X) ** 2 + VERTEX_Y
     return y <= parabola_y  # для перевернутой параболы снаружи - ниже кривой
 
 
 # Собираем центры квадратов и их цвета только снаружи параболы и выше уровня отсечения
-centers_outside = []
-colors_outside = []
+centers_outside: list = []
+colors_outside: list = []
 
-for row in range(num_rows):
-    for col in range(num_cols):
-        center_x = offset_x + col * spacing
-        center_y = offset_y + row * spacing
+for row in range(NUM_ROWS):
+    for col in range(NUM_COLS):
+        center_x = OFFSET_X + col * SPACING
+        center_y = OFFSET_Y + row * SPACING
 
         if is_outside_parabola(center_x, center_y):
             # Генерируем случайный цвет для квадрата
@@ -57,27 +57,25 @@ for row in range(num_rows):
             colors_outside.append(color)
 
             # Рисуем квадрат
-            start_x = center_x - square_size // 2
-            start_y = center_y - square_size // 2
-            end_x = start_x + square_size
-            end_y = start_y + square_size
+            start_x = center_x - SQUARE_SIZE // 2
+            start_y = center_y - SQUARE_SIZE // 2
+            end_x = start_x + SQUARE_SIZE
+            end_y = start_y + SQUARE_SIZE
 
-            if (0 <= start_x < w and 0 <= end_x <= w and
-                    0 <= start_y < h and 0 <= end_y <= h and start_y >= cutoff_height):
-                vp[start_y:end_y, start_x:end_x] = color
+            if (0 <= start_x < WIDTH and 0 <= end_x <= WIDTH and
+                    0 <= start_y < HEIGHT and 0 <= end_y <= HEIGHT and start_y >= CUTOFF_HEIGHT):
+                canvas[start_y:end_y, start_x:end_x] = color
 
 
-# Функция для интерполяции цвета между двумя точками
-def interpolate_color(color1, color2, t):
-    """Интерполирует между двумя цветами"""
+def interpolate_color(color1: tuple, color2: tuple, t: float) -> tuple:
+    """Функция для интерполяции цвета между двумя точками, интерполирует между двумя цветами"""
     r = int(color1[0] * (1 - t) + color2[0] * t)
     g = int(color1[1] * (1 - t) + color2[1] * t)
     b = int(color1[2] * (1 - t) + color2[2] * t)
     return (r, g, b)
 
 
-# Функция для нахождения ближайшего квадрата к точке
-def find_nearest_square_color(x, y):
+def find_nearest_square_color(x: int, y: int) -> tuple:
     """Находит цвет ближайшего квадрата к точке (x, y)"""
     min_dist = float('inf')
     nearest_color = (0, 0, 0)
@@ -91,23 +89,21 @@ def find_nearest_square_color(x, y):
     return nearest_color
 
 
-# Функция алгоритма Брезенхема для рисования линии с интерполяцией цветов
-def draw_line_bresenham_interpolated(x0, y0, x1, y1, color_start, color_end, thickness=2):
+def draw_line_bresenham_interpolated(x0: int, y0: int, x1: int, y1: int, color_start: tuple, color_end: tuple, thickness=2):
     """Рисует линию алгоритмом Брезенхема с интерполяцией цветов"""
-    # Проверяем, не находятся ли точки ниже уровня отсечения
-    if y0 < cutoff_height or y1 < cutoff_height:
+    if y0 < CUTOFF_HEIGHT or y1 < CUTOFF_HEIGHT:  # check points
         return []
 
     dx = abs(x1 - x0)
     dy = abs(y1 - y0)
     steep = dy > dx
 
-    if steep:
+    if steep:  # если крутизна, то меняем
         x0, y0 = y0, x0
         x1, y1 = y1, x1
         dx, dy = dy, dx
 
-    if x0 > x1:
+    if x0 > x1:  # приводим к виду, чтобы x0 < x1
         x0, x1 = x1, x0
         y0, y1 = y1, y0
         color_start, color_end = color_end, color_start
@@ -127,7 +123,7 @@ def draw_line_bresenham_interpolated(x0, y0, x1, y1, color_start, color_end, thi
     points = []
     while x <= x1:
         # Проверяем, не вышли ли за уровень отсечения
-        if (steep and x < cutoff_height) or (not steep and y < cutoff_height):
+        if (steep and x < CUTOFF_HEIGHT) or (not steep and y < CUTOFF_HEIGHT):
             break
 
         # Вычисляем прогресс для интерполяции цвета
@@ -150,71 +146,71 @@ def draw_line_bresenham_interpolated(x0, y0, x1, y1, color_start, color_end, thi
         for i in range(-thickness // 2, thickness // 2 + 1):
             for j in range(-thickness // 2, thickness // 2 + 1):
                 nx, ny = px + i, py + j
-                if 0 <= nx < w and 0 <= ny < h and ny >= cutoff_height:
-                    vp[ny, nx] = color
+                if 0 <= nx < WIDTH and 0 <= ny < HEIGHT and ny >= CUTOFF_HEIGHT:
+                    canvas[ny, nx] = color
 
     return points
 
 
-# Горизонтальные линии сетки (только между соседними квадратами в строке)
+# горизонт. линии сетки (только между соседними квадратами в строке)
 for i in range(len(centers_outside)):
     x0, y0 = centers_outside[i]
 
-    # Ищем правого соседа в той же строке
+    # ищем правого соседа в той же строке
     for j in range(len(centers_outside)):
         if i != j:
             x1, y1 = centers_outside[j]
-            # Проверяем, что это правый сосед в той же строке
-            if abs(y1 - y0) < spacing / 2 and abs(x1 - x0 - spacing) < spacing / 2:
+            # проверяем, что это правый сосед в той же строке
+            if abs(y1 - y0) < SPACING / 2 and abs(x1 - x0 - SPACING) < SPACING / 2:
                 color1 = colors_outside[i]
                 color2 = colors_outside[j]
                 draw_line_bresenham_interpolated(x0, y0, x1, y1, color1, color2, thickness=2)
 
-# Вертикальные линии сетки (только между соседними квадратами в столбце)
+# вертикал. линии сетки (только между соседними квадратами в столбце)
 for i in range(len(centers_outside)):
     x0, y0 = centers_outside[i]
 
-    # Ищем нижнего соседа в том же столбце
+    # ищем нижнего соседа в том же столбце
     for j in range(len(centers_outside)):
         if i != j:
             x1, y1 = centers_outside[j]
-            # Проверяем, что это нижний сосед в том же столбце
-            if abs(x1 - x0) < spacing / 2 and abs(y1 - y0 - spacing) < spacing / 2:
+            # проверяем, что это нижний сосед в том же столбце
+            if abs(x1 - x0) < SPACING / 2 and abs(y1 - y0 - SPACING) < SPACING / 2:
                 color1 = colors_outside[i]
                 color2 = colors_outside[j]
                 draw_line_bresenham_interpolated(x0, y0, x1, y1, color1, color2, thickness=2)
 
-# Рисуем параболу с учетом уровня отсечения
-parabola_resolution = 1  # шаг для сглаживания параболы
+# рисуем параболу с учетом уровня отсечения
+parabola_resolution = 1  # шаг для сглаживания параболы (лестничный эффект)
 
-for x in range(0, w, parabola_resolution):
-    y_parabola = int(a * (x - vertex_x) ** 2 + vertex_y)
+for x in range(0, WIDTH, parabola_resolution):
+    y_parabola = int(a * (x - VERTEX_X) ** 2 + VERTEX_Y)
 
-    # Не рисуем параболу ниже уровня отсечения
-    if y_parabola < cutoff_height:
+    # параболу ниже уровня отсечения не рисуем
+    if y_parabola < CUTOFF_HEIGHT:
         continue
 
-    if 0 <= y_parabola < h:
-        # Находим цвет ближайшего квадрата
+    if 0 <= y_parabola < HEIGHT:
+        # находим цвет ближайшего квадрата
         parabola_color = find_nearest_square_color(x, y_parabola)
 
-        # Рисуем точку параболы
+        # рисуем точку параболы
         for dy in range(-3, 4):  # делаем параболу толще
             for dx in range(-1, 2):
                 ny = y_parabola + dy
                 nx = x + dx
-                if 0 <= ny < h and 0 <= nx < w and ny >= cutoff_height:
-                    vp[ny, nx] = parabola_color
+                if 0 <= ny < HEIGHT and 0 <= nx < WIDTH and ny >= CUTOFF_HEIGHT:
+                    canvas[ny, nx] = parabola_color
 
-# Рисуем линию отсечения СЕРЫМ цветом
-for x in range(w):
+# рисуем линию отсечения СЕРЫМ цветом
+for x in range(WIDTH):
     for dy in range(-2, 3):
-        ny = cutoff_height + dy
-        if 0 <= ny < h:
-            vp[ny, x] = (150, 150, 150)  # Серая линия отсечения
+        ny = CUTOFF_HEIGHT + dy
+        if 0 <= ny < HEIGHT:
+            canvas[ny, x] = (150, 150, 150)  # Серая линия отсечения
 
 plt.figure(figsize=(12, 12))
-plt.imshow(vp)
+plt.imshow(canvas)
 plt.axis('off')
 plt.show()
 
