@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+from random import choice
 from settings import *
 
 
@@ -49,6 +50,9 @@ def fill_rectangle_bresenham(vertices, colors, image, use_interpolation=True):
     """Закрашивает прямоугольник методом Брезенхема с использованием горизонтальных линий"""
     if len(vertices) != 4:
         return
+
+    if not use_interpolation:
+        solid_color = colors[0]
 
     # Находим диапазон Y координат
     min_y = max(CUTOFF_HEIGHT, min(int(v[1]) for v in vertices))
@@ -135,8 +139,7 @@ def fill_rectangle_bresenham(vertices, colors, image, use_interpolation=True):
                     draw_horizontal_line_bresenham(x_start, x_end, y, color_left, color_right, image)
                 else:
                     # Используем цвет левого ребра для всей линии
-                    color_left = tuple(min(255, max(0, int(c))) for c in edge_left['color'])
-                    draw_horizontal_line_bresenham(x_start, x_end, y, color_left, color_left, image)
+                    draw_horizontal_line_bresenham(x_start, x_end, y, solid_color, solid_color, image)
 
         # Обновляем X координаты и цвета для следующей строки
         for edge in current_edges:
@@ -223,15 +226,33 @@ def main():
 
     # Сначала закрашиваем все прямоугольники
     filled_count = 0
-    for polygon in POLYGONS:
-        # Проверяем, что все вершины прямоугольника находятся снаружи параболы
-        all_vertices_outside = all(is_outside_parabola(v[0], v[1]) for v in polygon['vertices'])
 
-        if all_vertices_outside:
-            fill_rectangle_bresenham(polygon['vertices'], polygon['colors'], image, use_interpolation)
-            filled_count += 1
+    if FILL_ALL_RECTANGLES:
+        # Закрашиваем ВСЕ прямоугольники, которые находятся снаружи параболы
+        for polygon in POLYGONS:
+            # Проверяем, что все вершины прямоугольника находятся снаружи параболы
+            all_vertices_outside = all(is_outside_parabola(v[0], v[1]) for v in polygon['vertices'])
 
-    print(f"Закрашено {filled_count} прямоугольников (метод Брезенхема)")
+            if all_vertices_outside:
+                fill_rectangle_bresenham(polygon['vertices'], polygon['colors'], image, use_interpolation)
+                filled_count += 1
+    else:
+        # Закрашиваем только ОДИН СЛУЧАЙНЫЙ прямоугольник
+        valid_polygons = []
+        for polygon in POLYGONS:
+            # Проверяем, что все вершины прямоугольника находятся снаружи параболы
+            all_vertices_outside = all(is_outside_parabola(v[0], v[1]) for v in polygon['vertices'])
+            if all_vertices_outside:
+                valid_polygons.append(polygon)
+
+        if valid_polygons:
+            # Выбираем случайный прямоугольник для закрашивания
+            random_polygon = choice(valid_polygons)
+            fill_rectangle_bresenham(random_polygon['vertices'], random_polygon['colors'], image, use_interpolation)
+            filled_count = 1
+            print(f"Закрашен случайный прямоугольник с ID: {random_polygon['id']}")
+        else:
+            print("Нет подходящих прямоугольников для закрашивания")
 
     # Затем рисуем БЕЛЫЕ линии поверх закрашенных прямоугольников
     for polygon in POLYGONS:
