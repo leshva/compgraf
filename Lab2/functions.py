@@ -63,7 +63,10 @@ def fill_rectangle_bresenham(vertices, colors, image, use_interpolation=True):
         x2, y2 = vertices[(i + 1) % 4]
         color1 = colors[i]
         color2 = colors[(i + 1) % 4]
-
+        #
+        # # Пропускаем горизонтальные ребра
+        # if abs(y1 - y2) < 1e-6:
+        #     continue
 
         # Определяем направление ребра (от меньшего Y к большему)
         if y1 > y2:
