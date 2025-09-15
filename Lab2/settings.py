@@ -11,8 +11,8 @@ NUM_ROWS = 10 # число квадратов по Y
 POLYGON_SIZE = 20 # размер полигона (области деформации)
 
 # Параметры закрашивания (можно менять)
-FILL_MODE = "interpolate"  # "solid" - одним цветом, "interpolate" - интерполяция цветов
-FILL_ALL_RECTANGLES = True  # True - закрасить все прямоугольники, False - только один случайный
+FILL_MODE = "solid"  # "solid" - одним цветом, "interpolate" - интерполяция цветов
+FILL_ALL_RECTANGLES = False  # True - закрасить все прямоугольники, False - только один случайный
 
 # Автоматический расчет spacing на основе числа квадратов
 SPACING_X = WIDTH // (NUM_COLS - 1) if NUM_COLS > 1 else WIDTH
